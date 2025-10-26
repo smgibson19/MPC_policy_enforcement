@@ -3,4 +3,6 @@
 
 // function for operation on data
 
-// main
+fn main(){
+    println!("Hey!");
+}
