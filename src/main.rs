@@ -1,26 +1,18 @@
 use rand::Rng; // Import Rng trait
 
-/// Function that creates secret shares of a given integer.
+/// Function that creates secret shares of a given integer
 /// 
-/// # Arguments
-/// * `data` - The secret integer to split.
-/// * `shares` - Number of shares to generate.
-/// 
-/// # Returns
-/// A vector of integers representing the shares.
 fn share(data: i32, shares: i32) -> Vec<i32> {
     let mut split: Vec<i32> = Vec::new();
     let mut sum: i32 = 0;
 
-    // Create the random number generator once, outside the loop
     let mut rng = rand::rng();
 
     for _ in 0..shares - 1 {
-        // Generate a random number between 0 and 100
-        let num: i32 = rng.random_range(0..=100);
 
-        // Randomly assign a sign: -1 or 1
+        let num: i32 = rng.random_range(0..=100);
         let mut sign: i32 = rng.random_range(-1..=1);
+        
         if sign == 0 {
             sign = 1;
         }
@@ -37,12 +29,25 @@ fn share(data: i32, shares: i32) -> Vec<i32> {
 }
 
 fn main() {
-    let foo: i32 = 23;
-    let shares: i32 = 3;
+   let secret1: i32 = 15;
+    let secret2: i32 = 23;
 
-    let results: Vec<i32> = share(foo, shares);
-    println!("Shares: {:?}", results);
+    let num_parties: i32 = 3;
 
-    let reconstructed: i32 = results.iter().sum();
-    println!("Reconstructed: {}", reconstructed);
+    let shares1 = share(secret1, num_parties);
+    let shares2 = share(secret2, num_parties);
+
+    println!("Shares from party 1: {:?}", shares1);
+    println!("Shares from party 2: {:?}", shares2);
+
+    let mut compute_sums: Vec<i32> = Vec::new();
+    for i in 0..num_parties as usize {
+        let sum = shares1[i] + shares2[i];
+        compute_sums.push(sum);
+    }
+
+    println!("Compute party sums: {:?}", compute_sums);
+
+    let total_sum: i32 = compute_sums.iter().sum();
+    println!("Reconstructed total sum: {}", total_sum);
 }
