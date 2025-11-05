@@ -9,6 +9,6 @@ The secret share function splits a secret integer into multiple "shares" so that
 
 - Split any integer secret into `n` shares.
 - Each share (except the last) is a random integer, possibly positive or negative.
-- The sum of all shares equals the original secret.
+- The sum of all shares equals the original secret (last share is calculated based on the previous randomly generated ones).
 - Reconstruct the original secret by summing the shares.
 
