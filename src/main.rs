@@ -11,8 +11,9 @@ fn share(data: i32, shares: i32) -> Vec<i32> {
 
     // calc polynomials
     for _x in 0..shares-1{
-        let num: i32 = rand::thread_rng().gen_range(0..=100);  
-        let mut sign: i32 = rand::thread_rng().gen_range(-1..=1);
+        let mut rng = rand::rng();
+        let num: i32 = rng.random_range(0..=100);
+        let mut sign: i32 = rng.random_range(-1..=1);
 
         if sign == 0{
             sign += 1;
