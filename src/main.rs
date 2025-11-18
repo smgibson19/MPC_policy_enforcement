@@ -1,4 +1,6 @@
 use rand::Rng; // Import Rng trait
+mod mpc_client;
+mod mpc_server;
 
 /// Function that creates secret shares of a given integer
 /// 
