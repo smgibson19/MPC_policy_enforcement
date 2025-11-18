@@ -29,7 +29,10 @@ fn sum_client(mut stream: TcpStream) {
 
 // function need to be async to listen for mult clients? 
 fn main() {
+    // 1) listen for clients
     let listener = TcpListener::bind("0.0.0.0:3333").unwrap();
+
+    // 2) need to wait for all 3 clients to start
     // accept connections and process them, spawning a new thread for each one
     println!("Server listening on port 3333");
     for stream in listener.incoming() {

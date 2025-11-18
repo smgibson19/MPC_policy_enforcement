@@ -31,13 +31,18 @@ fn share(data: i32, shares: i32) -> Vec<i32> {
 }
 
 fn client_process() {
-    // connect to server 
+    // since number of parties is given, split can happen before connection
 
-    // learn how many clients there are
+    let secret1: i32 = 15; // set this secret as an argument from the commandline
 
-    // split data shares
+    let num_parties: i32 = 3; // here is given
 
-    // send data to both servers
+    let shares1 = share(secret1, num_parties);
+    println!("Shares from party 1: {:?}", shares1);
+
+    // 2) connect to servers
+    
+    // 3) send data to both servers
 }
 
 

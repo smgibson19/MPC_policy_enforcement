@@ -4,38 +4,36 @@ use std::net::{TcpListener, TcpStream, Shutdown};
 use std::sync::mpsc;
 use stf::thread;
 
-
-
 mod mpcClient;
 mod mpcServer;
 
-/// Function that creates secret shares of a given integer
-/// 
-fn share(data: i32, shares: i32) -> Vec<i32> {
-    let mut split: Vec<i32> = Vec::new();
-    let mut sum: i32 = 0;
+// /// Function that creates secret shares of a given integer
+// /// in client
+// fn share(data: i32, shares: i32) -> Vec<i32> {
+//     let mut split: Vec<i32> = Vec::new();
+//     let mut sum: i32 = 0;
 
-    let mut rng = rand::rng();
+//     let mut rng = rand::rng();
 
-    for _ in 0..shares - 1 {
+//     for _ in 0..shares - 1 {
 
-        let num: i32 = rng.random_range(0..=100);
-        let mut sign: i32 = rng.random_range(-1..=1);
+//         let num: i32 = rng.random_range(0..=100);
+//         let mut sign: i32 = rng.random_range(-1..=1);
         
-        if sign == 0 {
-            sign = 1;
-        }
+//         if sign == 0 {
+//             sign = 1;
+//         }
 
-        let value = num * sign;
-        sum += value;
-        split.push(value);
-    }
+//         let value = num * sign;
+//         sum += value;
+//         split.push(value);
+//     }
 
-    // Last share ensures sum of shares equals the secret
-    split.push(data - sum);
+//     // Last share ensures sum of shares equals the secret
+//     split.push(data - sum);
 
-    split
-}
+//     split
+// }
 
 fn main() {
    let secret1: i32 = 15;
