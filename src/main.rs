@@ -1,6 +1,13 @@
 use rand::Rng; // Import Rng trait
-mod mpc_client;
-mod mpc_server;
+use std::io:{ErrorKind, Read, Write};
+use std::net::{TcpListener, TcpStream, Shutdown};
+use std::sync::mpsc;
+use stf::thread;
+
+
+
+mod mpcClient;
+mod mpcServer;
 
 /// Function that creates secret shares of a given integer
 /// 
