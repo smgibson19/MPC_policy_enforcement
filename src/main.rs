@@ -4,8 +4,8 @@ use std::net::{TcpListener, TcpStream, Shutdown};
 use std::sync::mpsc;
 use stf::thread;
 
-mod mpcClient;
-mod mpcServer;
+mod server;
+mod client;
 
 // /// Function that creates secret shares of a given integer
 // /// in client
