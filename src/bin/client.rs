@@ -31,6 +31,7 @@ fn share(data: i32, shares: i32) -> Vec<i32> {
     split
 }
 
+// how they connect to the servers, and send shares
 fn connection(std::string hostName, usize share){
     match TcpStream::connect(hostName) {
         Ok(mut stream) => {
@@ -39,21 +40,20 @@ fn connection(std::string hostName, usize share){
             stream.write(share).unwrap();
             println!("Sent share, awaiting reply...");
 
-            // not sure if we will get feedback from servers
-            // let mut data = [0 as u8; 6]; // using 6 byte buffer
-            // match stream.read_exact(&mut data) {
-            //     Ok(_) => {
-            //         if &data == msg {
-            //             println!("Reply is ok!");
-            //         } else {
-            //             let text = from_utf8(&data).unwrap();
-            //             println!("Unexpected reply: {}", text);
-            //         }
-            //     },
-            //     Err(e) => {
-            //         println!("Failed to receive data: {}", e);
-            //     }
-            // }
+            let mut data = [0 as u8; 6]; // using 6 byte buffer
+            match stream.read_exact(&mut data) {
+                Ok(_) => {
+                    if &data == msg {
+                        println!("Reply is ok!");
+                    } else {
+                        let text = from_utf8(&data).unwrap();
+                        println!("Unexpected reply: {}", text);
+                    }
+                },
+                Err(e) => {
+                    println!("Failed to receive data: {}", e);
+                }
+            }
         },
         Err(e) => {
             println!("Failed to connect: {}", e);
@@ -66,7 +66,7 @@ fn main() {
     // take in secret number from args
     let args: Vec<String> = env::args().collect();
 
-    let secret: i32 = &args[1]; 
+    let mut secret: i32 = &args[1]; 
     let num_parties: i32 = 3; // given
 
     let shares = share(secret, num_parties);
