@@ -1,8 +1,8 @@
-use std::io:{ErrorKind, Read, Write};
-use std::net::{TcpListener, TcpStream, Shutdown};
-use std::sync::mpsc;
-use stf::thread;
+use rand::Rng; // Import Rng trait
+use std::io::{Read, Write};
+use std::net::{TcpStream};
 use std::env;
+use std::str::from_utf8;
 
 // make shares
 fn share(data: i32, shares: i32) -> Vec<i32> {
@@ -32,23 +32,21 @@ fn share(data: i32, shares: i32) -> Vec<i32> {
 }
 
 // how they connect to the servers, and send shares
-fn connection(std::string hostName, usize share){
-    match TcpStream::connect(hostName) {
+fn connection(host_name: String, share: i32){
+    match TcpStream::connect(&host_name) {
         Ok(mut stream) => {
-            println!("Successfully connected to server {}", hostName);
+            println!("Successfully connected to server {}", host_name);
 
-            stream.write(share).unwrap();
+            // writing all share to stream 
+
+            let share_to_string: [u8; _] = share.to_be_bytes();
+            stream.write(&share_to_string).unwrap();
             println!("Sent share, awaiting reply...");
 
-            let mut data = [0 as u8; 6]; // using 6 byte buffer
-            match stream.read_exact(&mut data) {
+            let mut buffer = [0u8; 50]; 
+            match stream.read(&mut buffer) {
                 Ok(_) => {
-                    if &data == msg {
-                        println!("Reply is ok!");
-                    } else {
-                        let text = from_utf8(&data).unwrap();
-                        println!("Unexpected reply: {}", text);
-                    }
+                    println!("Reply is ok!");
                 },
                 Err(e) => {
                     println!("Failed to receive data: {}", e);
@@ -59,27 +57,28 @@ fn connection(std::string hostName, usize share){
             println!("Failed to connect: {}", e);
         }
     }
-    println!("Terminated connection from {}", hostName);
+    println!("Terminated connection from {}", host_name);
 }
 
 fn main() {
     // take in secret number from args
     let args: Vec<String> = env::args().collect();
 
-    let mut secret: i32 = &args[1]; 
-    let num_parties: i32 = 3; // given
+    let secret = &args[1]; 
+    let secret: i32 = secret.parse::<i32>().unwrap();
+    let num_parties: i32 = 2; // given
 
     let shares = share(secret, num_parties);
 
     // server 1
     let server1 = String::from("localhost:3333");
-    let share1 = usize shares[0];
+    let share1: i32 = shares[0];
     connection(server1, share1);
 
     // server 2
     let server2 = String::from("localhost:3333");
-    let share2 = usize shares[1];
+    let share2: i32 = shares[1];
     connection(server2, share2);
+
+    // client decides their policy? sent over the server request 
 }
-
-

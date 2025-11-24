@@ -1,5 +1,5 @@
 use rand::Rng; // Import Rng trait
-use std::io:{ErrorKind, Read, Write};
+use std::io::{ErrorKind, Read, Write};
 use std::net::{TcpListener, TcpStream, Shutdown};
 use std::sync::mpsc;
 use stf::thread;
