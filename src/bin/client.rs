@@ -2,7 +2,6 @@ use rand::Rng; // Import Rng trait
 use std::io::{Read, Write};
 use std::net::{TcpStream};
 use std::env;
-use std::str::from_utf8;
 
 // make shares
 fn share(data: i32, shares: i32) -> Vec<i32> {
@@ -70,15 +69,12 @@ fn main() {
 
     let shares = share(secret, num_parties);
 
-    // server 1
-    let server1 = String::from("localhost:3333");
-    let share1: i32 = shares[0];
-    connection(server1, share1);
+    // need the server names in a list
+    let server_names = vec!["localhost:3333", "localhost:3334"];
 
-    // server 2
-    let server2 = String::from("localhost:3333");
-    let share2: i32 = shares[1];
-    connection(server2, share2);
+    for x in 0..shares.len() {
+        connection(String::from(server_names[x]), shares[x]);
+    }
 
     // client decides their policy? sent over the server request 
 }
