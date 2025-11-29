@@ -1,7 +1,17 @@
 use rand::Rng; // Import Rng trait
 use std::io::{Read, Write};
 use std::net::{TcpStream};
-use std::env;
+use std::{env, primitive};
+
+struct SecretShare{
+    share: i32,
+    share_policy: String, // will be sesame not sure how to do that yet
+}
+// add
+// open
+// open-reconstruct
+// declassify
+// policycheck()
 
 // make shares
 fn share(data: i32, shares: i32) -> Vec<i32> {
@@ -31,14 +41,21 @@ fn share(data: i32, shares: i32) -> Vec<i32> {
 }
 
 // how they connect to the servers, and send shares
-fn connection(host_name: String, share: i32){
+fn connection(host_name: String, private_share: SecretShare){
     match TcpStream::connect(&host_name) {
         Ok(mut stream) => {
             println!("Successfully connected to server {}", host_name);
 
-            // writing all share to stream 
+            // check private_share policy? 
+            if(private_share.share_policy == "all"){
 
-            let share_to_string: [u8; _] = share.to_be_bytes();
+            }
+            else{
+
+            }
+
+            // writing all share to stream 
+            let share_to_string: [u8; _] = private_share.share.to_be_bytes();
             stream.write(&share_to_string).unwrap();
             println!("Sent share, awaiting reply...");
 
@@ -65,15 +82,22 @@ fn main() {
 
     let secret = &args[1]; 
     let secret: i32 = secret.parse::<i32>().unwrap();
-    let num_parties: i32 = 2; // given
 
-    let shares = share(secret, num_parties);
+    // given variables: 
+    let num_parties: i32 = 2;
 
     // need the server names in a list
-    let server_names = vec!["localhost:3333", "localhost:3334"];
+    // change when we get list
+    let server_names: Vec<&str> = vec!["localhost:3333", "localhost:3334"];
+    let policies: Vec<&str> = vec!["all", "none"];
 
-    for x in 0..shares.len() {
-        connection(String::from(server_names[x]), shares[x]);
+    // split secret up
+    let shares = share(secret, num_parties);
+
+    // sends one secret to each server
+    for x in 0..server_names.len() {
+        let private_share = SecretShare{share: shares[x], share_policy: policies[x].to_string()};
+        connection(String::from(server_names[x]), private_share);
     }
 
     // client decides their policy? sent over the server request 
