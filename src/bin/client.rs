@@ -17,25 +17,19 @@ impl SecretShare {
         let new_share: i32 = self.share + other.share;
 
         // add policy conservatively; intersection of two
-        let new_policy: HashSet<String> = (self.share_policy).intersection(&other.share_policy).collect();
+        let new_policy: HashSet<String> = (self.share_policy).intersection(&other.share_policy).cloned().collect();
         SecretShare::new(new_share, new_policy)
     }    
-    pub fn reveal(self) {
-        // target of reveal is allowed by policy
-        // "server1" is in policy = ["server1"]
-        if true {
+    pub fn reveal(self, name: String) {
+        if self.share_policy.contains(&name) {
+            // write to file with that name
             println!("{}", self.share);
         } else {
+            // write to that file access denined :)
             println!("NOT ALLOWED");
         }
     }
 }
-
-// add function to access, new struct share = share 1 + share 2/ concat share policy
-// reveal function: prints function 
-
-// serializeable/ deserializable
-// send over socket easier :)
 
 // make shares
 fn share(data: i32, shares: i32) -> Vec<i32> {
@@ -70,13 +64,7 @@ fn connection(host_name: String, private_share: SecretShare){
         Ok(mut stream) => {
             println!("Successfully connected to server {}", host_name);
 
-            // check private_share policy? 
-            // if(private_share.share_policy == "all"){
-
-            // }
-            // else{
-
-            // }
+            // serialize it to send
 
             // writing all share to stream 
             let share_to_string: [u8; _] = private_share.share.to_be_bytes();
@@ -103,25 +91,34 @@ fn connection(host_name: String, private_share: SecretShare){
 fn main() {
     // take in secret number from args
     let args: Vec<String> = env::args().collect();
-
     let secret = &args[1]; 
-    // take arg for list of permissions 
     let secret: i32 = secret.parse::<i32>().unwrap();
 
-    // given variables: 
-    let num_parties: i32 = 2;
+    // split share
+    let num_parties  = 2; // given number, len 2 for everything
+    let shares = share(secret, num_parties);
+
+    // policy hashsets
+    // this will be user input, for now hard coded
+    let mut pol1 = HashSet::new();
+    pol1.insert(String::from("server1.txt"));
+    pol1.insert(String::from("server2.txt"));
+
+    let mut pol2 = HashSet::new();
+    pol2.insert(String::from("server1.txt"));
+    // pol2.insert("server2.txt");
+    
+    // give each piece the same policy that user input
+    let num_parties: usize = num_parties as usize;
+    let policies = vec![pol1; num_parties];
 
     // need the server names in a list
-    // change when we get list
     let server_names: Vec<&str> = vec!["localhost:3333", "localhost:3334"];
-    let policies: Vec<&str> = vec!["all", "none"];
-
-    // split secret up
-    let shares = share(secret, num_parties);
 
     // sends one secret to each server
     for x in 0..server_names.len() {
-        let private_share = SecretShare{share: shares[x], share_policy: policies[x].to_string()};
+        let private_share = SecretShare{share: shares[x], share_policy: (policies[x]).clone()};
+
         connection(String::from(server_names[x]), private_share);
     }
 
