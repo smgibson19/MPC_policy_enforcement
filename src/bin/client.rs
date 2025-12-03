@@ -1,5 +1,4 @@
 use rand::Rng;
-// Import Rng trait
 use std::io::{Read, Write};
 use std::net::{TcpStream};
 use std::{env};
@@ -24,12 +23,13 @@ impl SecretShare {
     pub fn reveal(self, name: String) {
         let mut _file = File::create(&name).expect("File creation failed");
 
+        // write to file based on permission
         if self.share_policy.contains(&name) {
             let piece = self.share;
             let results = format!("Sum of values :{piece}"); 
             write(&name, results).expect("Write failed");
         } else {
-            write(&name, "Access Denied :O ").expect("Write failed");
+            write(&name, "Access Denied :O").expect("Write failed");
         }
     }
 }
@@ -93,7 +93,10 @@ fn connection(host_name: String, private_share: SecretShare){
 
 fn main() {
     // take in secret number from args
+    // assuming user inputs args as follows: num file.txt, file2.txt, file3.txt
     let args: Vec<String> = env::args().collect();
+    println!("{:?}", args);
+
     let secret = &args[1]; 
     let secret: i32 = secret.parse::<i32>().unwrap();
 
@@ -102,14 +105,12 @@ fn main() {
     let shares = share(secret, num_parties);
 
     // policy hashsets
-    // this will be user input, for now hard coded
     let mut pol1 = HashSet::new();
-    pol1.insert(String::from("server1.txt"));
-    pol1.insert(String::from("server2.txt"));
+    let (_first, rest) = args.split_first().unwrap();
 
-    let mut pol2 = HashSet::new();
-    pol2.insert(String::from("server1.txt"));
-    // pol2.insert("server2.txt");
+    for x in rest{
+        pol1.insert(String::from(x));
+    }
     
     // give each piece the same policy that user input
     let num_parties: usize = num_parties as usize;
