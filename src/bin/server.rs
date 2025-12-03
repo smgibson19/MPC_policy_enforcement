@@ -4,9 +4,9 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 
 // sum a vector of shares
-
-fn add_numbers(shares: Vec<usize>) -> usize {
-    shares.iter().sum()
+fn add_numbers(shares: Arc<Mutex<Vec<usize>>>) -> usize {
+    let foo = shares.lock().unwrap();
+    foo.iter().sum()
 }
 
 
@@ -104,9 +104,8 @@ fn main() -> std::io::Result<()> {
         }
     }
 
-    // how to communicate between servers? 
-    // do we need to async anything? 
-    // how do we retrieve answers from the client/ where do we output them?
+    // mutex question, trying to pass mutex is giving weird 
+    // struct -> sesame stuff ask some specific syntax about
     // I think we should have both servers print out result to cmd line 
     // we calculate manual for now
 
