@@ -1,17 +1,41 @@
-use rand::Rng; // Import Rng trait
+use rand::Rng;
+// Import Rng trait
 use std::io::{Read, Write};
 use std::net::{TcpStream};
 use std::{env, primitive};
+use std::collections::HashSet;
 
-struct SecretShare{
+pub struct SecretShare{
     share: i32,
-    share_policy: String, // will be sesame not sure how to do that yet
+    share_policy: HashSet<String>
 }
-// add
-// open
-// open-reconstruct
-// declassify
-// policycheck()
+impl SecretShare {
+    pub fn new(piece: i32, policy: HashSet<String>) -> SecretShare {
+        SecretShare{ share: piece, share_policy: policy }
+    }
+    pub fn add(self, other: SecretShare) -> SecretShare {
+        let new_share: i32 = self.share + other.share;
+
+        // add policy conservatively; intersection of two
+        let new_policy: HashSet<String> = (self.share_policy).intersection(&other.share_policy).collect();
+        SecretShare::new(new_share, new_policy)
+    }    
+    pub fn reveal(self) {
+        // target of reveal is allowed by policy
+        // "server1" is in policy = ["server1"]
+        if true {
+            println!("{}", self.share);
+        } else {
+            println!("NOT ALLOWED");
+        }
+    }
+}
+
+// add function to access, new struct share = share 1 + share 2/ concat share policy
+// reveal function: prints function 
+
+// serializeable/ deserializable
+// send over socket easier :)
 
 // make shares
 fn share(data: i32, shares: i32) -> Vec<i32> {
@@ -47,12 +71,12 @@ fn connection(host_name: String, private_share: SecretShare){
             println!("Successfully connected to server {}", host_name);
 
             // check private_share policy? 
-            if(private_share.share_policy == "all"){
+            // if(private_share.share_policy == "all"){
 
-            }
-            else{
+            // }
+            // else{
 
-            }
+            // }
 
             // writing all share to stream 
             let share_to_string: [u8; _] = private_share.share.to_be_bytes();
@@ -81,6 +105,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     let secret = &args[1]; 
+    // take arg for list of permissions 
     let secret: i32 = secret.parse::<i32>().unwrap();
 
     // given variables: 
