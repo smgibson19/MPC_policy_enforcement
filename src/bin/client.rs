@@ -2,8 +2,9 @@ use rand::Rng;
 // Import Rng trait
 use std::io::{Read, Write};
 use std::net::{TcpStream};
-use std::{env, primitive};
+use std::{env};
 use std::collections::HashSet;
+use std::fs::{File, write};
 
 pub struct SecretShare{
     share: i32,
@@ -21,12 +22,14 @@ impl SecretShare {
         SecretShare::new(new_share, new_policy)
     }    
     pub fn reveal(self, name: String) {
+        let mut _file = File::create(&name).expect("File creation failed");
+
         if self.share_policy.contains(&name) {
-            // write to file with that name
-            println!("{}", self.share);
+            let piece = self.share;
+            let results = format!("Sum of values :{piece}"); 
+            write(&name, results).expect("Write failed");
         } else {
-            // write to that file access denined :)
-            println!("NOT ALLOWED");
+            write(&name, "Access Denied :O ").expect("Write failed");
         }
     }
 }
