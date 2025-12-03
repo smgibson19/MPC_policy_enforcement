@@ -105,16 +105,16 @@ fn main() {
     let shares = share(secret, num_parties);
 
     // policy hashsets
-    let mut pol1 = HashSet::new();
+    let mut policy = HashSet::new();
     let (_first, rest) = args.split_first().unwrap();
 
     for x in rest{
-        pol1.insert(String::from(x));
+        policy.insert(String::from(x));
     }
     
     // give each piece the same policy that user input
     let num_parties: usize = num_parties as usize;
-    let policies = vec![pol1; num_parties];
+    let policies = vec![policy; num_parties];
 
     // need the server names in a list
     let server_names: Vec<&str> = vec!["localhost:3333", "localhost:3334"];
