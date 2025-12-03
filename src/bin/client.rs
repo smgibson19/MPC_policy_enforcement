@@ -93,7 +93,7 @@ fn connection(host_name: String, private_share: SecretShare){
 
 fn main() {
     // take in secret number from args
-    // assuming user inputs args as follows: num file.txt, file2.txt, file3.txt
+    // assuming user inputs args as follows: num file.txt file2.txt file3.txt
     let args: Vec<String> = env::args().collect();
     println!("{:?}", args);
 
@@ -117,7 +117,9 @@ fn main() {
     let policies = vec![policy; num_parties];
 
     // need the server names in a list
-    let server_names: Vec<&str> = vec!["localhost:3333", "localhost:3334"];
+    // let server_names: Vec<&str> = vec!["localhost:3333", "localhost:3334"];
+    let server_names: Vec<&str> = vec!["localhost:3333"];
+
 
     // sends one secret to each server
     for x in 0..server_names.len() {

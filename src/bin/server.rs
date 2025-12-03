@@ -4,9 +4,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 
 // sum a vector of shares
-fn add_numbers(shares: Arc<Mutex<Vec<usize>>>) -> usize {
-    let foo = shares.lock().unwrap();
-    foo.iter().sum()
+fn add_numbers(shares: Vec<usize>) -> usize {
+    shares.iter().sum()
 }
 
 
@@ -49,7 +48,7 @@ fn handle_client(mut stream: TcpStream, shared_shares: Arc<Mutex<Vec<usize>>>,
                         if *count >= 3 {
                             let sum = {
                                 let shares = shared_shares.lock().unwrap();
-                                add_numbers(&shares)
+                                add_numbers((*shares).clone())
                             };
                             println!("Sum of shares: {}", sum);
 
