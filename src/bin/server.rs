@@ -102,11 +102,5 @@ fn main() -> std::io::Result<()> {
             }
         }
     }
-
-    // mutex question, trying to pass mutex is giving weird 
-    // struct -> sesame stuff ask some specific syntax about
-    // I think we should have both servers print out result to cmd line 
-    // we calculate manual for now
-
     Ok(())
 }

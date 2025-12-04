@@ -4,7 +4,10 @@ use std::net::{TcpStream};
 use std::{env};
 use std::collections::HashSet;
 use std::fs::{File, write};
+use serde::{Serialize, Deserialize};
+use bincode;
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct SecretShare{
     share: i32,
     share_policy: HashSet<String>
@@ -68,10 +71,10 @@ fn connection(host_name: String, private_share: SecretShare){
             println!("Successfully connected to server {}", host_name);
 
             // serialize it to send
+            let serialized = bincode::serialize(&private_share).unwrap();
 
             // writing all share to stream 
-            let share_to_string: [u8; _] = private_share.share.to_be_bytes();
-            stream.write(&share_to_string).unwrap();
+            stream.write(&serialized).unwrap();
             println!("Sent share, awaiting reply...");
 
             let mut buffer = [0u8; 50]; 
