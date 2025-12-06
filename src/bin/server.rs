@@ -1,38 +1,37 @@
-use serde::{Serialize, Deserialize};
-use std::collections::HashSet;
+// use serde::{Serialize, Deserialize};
+use bincode;
+// use std::collections::HashSet;
 use std::io::{Read};
 use std::net::{TcpListener, TcpStream, Shutdown};
 use std::sync::{Arc, Mutex};
 use std::thread;
+mod client;
+use crate::client::SecretShare;
 
+// pub struct SecretShare {
+//     pub share: i32,      
+//     pub share_policy: String,
+// }
 
+// impl SecretShare {
+//     pub fn add(self, other: SecretShare) -> SecretShare {
+//         let new_value = self.share + other.share;
+//         let new_policy = self.share_policy.intersection(&other.share_policy).cloned().collect();
+//         // need to change this based on what we want the function to return. example below
+//         // let new_policy = if self.share_policy == other.share_policy {
+//         //     self.share_policy.clone()
+//         // } else {
+//         //     "none".to_string()
+//         // };
+//         SecretShare { share: new_value, share_policy: new_policy }
+//     }
+// }
 
-pub struct SecretShare {
-    pub share: i32,      
-    pub share_policy: String,
-}
-
-impl SecretShare {
-    pub fn add(self, other: SecretShare) -> SecretShare {
-        let new_value = self.share + other.share;
-        let new_policy = self.share_policy.intersection(&other.share_policy).cloned().collect();
-        // need to change this based on what we want the function to return. example below
-        // let new_policy = if self.share_policy == other.share_policy {
-        //     self.share_policy.clone()
-        // } else {
-        //     "none".to_string()
-        // };
-        SecretShare { share: new_value, share_policy: new_policy }
-    }
-}
-
-fn add_secret_shares(shares: Vec<SecretShare>) -> SecretShare {
-    let mut shares_sum = shares[0].clone();
-    for s in shares.into_iter().skip(1) {
-        shares_sum = shares_sum.add(s);
-    }
-    shares_sum
-}
+// fn add_secret_shares(shares: Vec<SecretShare>) {
+//     let output = shares[0].add(shares[1]).add(shares[2]);
+//     let name = String::from("server1.txt");
+//     output.reveal(name);
+// }
 
 
 // sum a vector of shares
@@ -54,74 +53,43 @@ fn handle_client(mut stream: TcpStream, shared_shares: Arc<Mutex<Vec<SecretShare
                 println!("Connection closed by client: {}", stream.peer_addr().unwrap());
                 break;
             }
-            Ok(n) => {
-                let received = String::from_utf8_lossy(&buffer[..n]).trim().to_string();
-                //match received.parse::<usize>() {
-                //deserializing the received share and policy
-                let parsed: SecretShare = match serde_json::from_str(&received) {
-                    Ok(share) => share, 
-                    // {
-                    //     {
-                    //         let mut shares = shared_shares.lock().unwrap();
-                    //         shares.push(share);
-                    //     }
+            Err(e) => {
+                eprintln!("Error reading from {}: {}", stream.peer_addr().unwrap(), e);
+                break;
+            }
+            Ok(_n) => {
+                let parsed: SecretShare = bincode::deserialize(&buffer).unwrap();
+                println!("hi :)");
 
-                    //     // thread count increment
-                    //     let mut count = thread_count.lock().unwrap();
-                    //     *count += 1;
-
-                    //     println!(
-                    //         "Received share: {} | Thread count: {}",
-                    //         share, *count
-                    //     );
-
-                    //     // call add_numbers when thread count is 3
-                    //     if *count >= 3 {
-                    //         let sum = {
-                    //             let shares = shared_shares.lock().unwrap();
-                    //             add_numbers((*shares).clone())
-                    //         };
-                    //         println!("Sum of shares: {}", sum);
-
-                    //         // reset count for next input
-                    //         let mut shares = shared_shares.lock().unwrap();
-                    //         shares.clear();
-                    //         *count = 0;
-                    //     }
-                    // }
-                    Err(_) => {
-                        println!("Invalid input from {}: {}", stream.peer_addr().unwrap(), received);
-                    }
-                };
-
-                {
-                    let mut vec = shared_shares.lock().unwrap();
-                    vec.push(parsed.clone());
-                }
+                // list of shares from all clients
+                let mut vec = shared_shares.lock().unwrap();
+                vec.push(parsed);
 
                 let mut count = thread_count.lock().unwrap();
                 *count += 1;
 
-                println!("Received share: {:?}", parsed);
+                // println!("Received share: {:?}", parsed);
 
                 if *count == 3 {
-                    let final_ans = {
-                        let vec = shared.lock().unwrap();
-                        add_secret_shares(vec.clone())
-                    };
+                    // let final_ans = {
+                    // };
 
-                    println!("Output:");
-                    println!("Sum = {}", final_ans.share);
-                    println!("Policy = {:?}", final_ans.share_policy);
-                    println!("\n");
+                    // println!("Output:");
+                    // println!("Sum = {}", final_ans.share);
+                    // println!("Policy = {:?}", final_ans.share_policy);
+                    // println!("\n");
+                    // let vec = shared_shares.lock().unwrap();
+                    // add_secret_shares(*vec);
 
-                    shared.lock().unwrap().clear();
-                    *c = 0;
+                    let vec = shared_shares.lock().unwrap();
+                    // add_secret_shares(*vec)
+                    let output = vec[0].clone().add(vec[1].clone()).add(vec[2].clone());
+                    let name = String::from("server1.txt");
+                    output.reveal(name);
+
+                    shared_shares.lock().unwrap().clear();
+                    *count = 0;
                 }
-            }
-            Err(e) => {
-                eprintln!("Error reading from {}: {}", stream.peer_addr().unwrap(), e);
-                break;
             }
         }
     }

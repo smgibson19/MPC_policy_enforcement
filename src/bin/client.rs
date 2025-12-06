@@ -7,7 +7,7 @@ use std::fs::{File, write};
 use serde::{Serialize, Deserialize};
 use bincode;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SecretShare{
     share: i32,
     share_policy: HashSet<String>
@@ -74,7 +74,7 @@ fn connection(host_name: String, private_share: SecretShare){
             let serialized = bincode::serialize(&private_share).unwrap();
 
             // writing all share to stream 
-            stream.write(&serialized).unwrap();
+            stream.write_all(&serialized).unwrap();
             println!("Sent share, awaiting reply...");
 
             let mut buffer = [0u8; 50]; 
@@ -130,6 +130,6 @@ fn main() {
 
         connection(String::from(server_names[x]), private_share);
     }
-
+    
     // client decides their policy? sent over the server request 
 }
