@@ -1,17 +1,41 @@
-use rand::Rng; // Import Rng trait
+use rand::Rng;
 use std::io::{Read, Write};
 use std::net::{TcpStream};
-use std::{env, primitive};
+use std::{env};
+use std::collections::HashSet;
+use std::fs::{File, write};
+use serde::{Serialize, Deserialize};
+use bincode;
 
-struct SecretShare{
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SecretShare{
     share: i32,
-    share_policy: String, // will be sesame not sure how to do that yet
+    share_policy: HashSet<String>
 }
-// add
-// open
-// open-reconstruct
-// declassify
-// policycheck()
+impl SecretShare {
+    pub fn new(piece: i32, policy: HashSet<String>) -> SecretShare {
+        SecretShare{ share: piece, share_policy: policy }
+    }
+    pub fn add(self, other: SecretShare) -> SecretShare {
+        let new_share: i32 = self.share + other.share;
+
+        // add policy conservatively; intersection of two
+        let new_policy: HashSet<String> = (self.share_policy).intersection(&other.share_policy).cloned().collect();
+        SecretShare::new(new_share, new_policy)
+    }    
+    pub fn reveal(self, name: String) {
+        let mut _file = File::create(&name).expect("File creation failed");
+
+        // write to file based on permission
+        if self.share_policy.contains(&name) {
+            let piece = self.share;
+            let results = format!("Sum of values :{piece}"); 
+            write(&name, results).expect("Write failed");
+        } else {
+            write(&name, "Access Denied :O").expect("Write failed");
+        }
+    }
+}
 
 // make shares
 fn share(data: i32, shares: i32) -> Vec<i32> {
@@ -46,17 +70,11 @@ fn connection(host_name: String, private_share: SecretShare){
         Ok(mut stream) => {
             println!("Successfully connected to server {}", host_name);
 
-            // check private_share policy? 
-            if(private_share.share_policy == "all"){
-
-            }
-            else{
-
-            }
+            // serialize it to send
+            let serialized = bincode::serialize(&private_share).unwrap();
 
             // writing all share to stream 
-            let share_to_string: [u8; _] = private_share.share.to_be_bytes();
-            stream.write(&share_to_string).unwrap();
+            stream.write(&serialized).unwrap();
             println!("Sent share, awaiting reply...");
 
             let mut buffer = [0u8; 50]; 
@@ -78,25 +96,38 @@ fn connection(host_name: String, private_share: SecretShare){
 
 fn main() {
     // take in secret number from args
+    // assuming user inputs args as follows: num file.txt file2.txt file3.txt
     let args: Vec<String> = env::args().collect();
+    println!("{:?}", args);
 
     let secret = &args[1]; 
     let secret: i32 = secret.parse::<i32>().unwrap();
 
-    // given variables: 
-    let num_parties: i32 = 2;
+    // split share
+    let num_parties  = 2; // given number, len 2 for everything
+    let shares = share(secret, num_parties);
+
+    // policy hashsets
+    let mut policy = HashSet::new();
+    let (_first, rest) = args.split_first().unwrap();
+
+    for x in rest{
+        policy.insert(String::from(x));
+    }
+    
+    // give each piece the same policy that user input
+    let num_parties: usize = num_parties as usize;
+    let policies = vec![policy; num_parties];
 
     // need the server names in a list
-    // change when we get list
-    let server_names: Vec<&str> = vec!["localhost:3333", "localhost:3334"];
-    let policies: Vec<&str> = vec!["all", "none"];
+    // let server_names: Vec<&str> = vec!["localhost:3333", "localhost:3334"];
+    let server_names: Vec<&str> = vec!["localhost:3333"];
 
-    // split secret up
-    let shares = share(secret, num_parties);
 
     // sends one secret to each server
     for x in 0..server_names.len() {
-        let private_share = SecretShare{share: shares[x], share_policy: policies[x].to_string()};
+        let private_share = SecretShare{share: shares[x], share_policy: (policies[x]).clone()};
+
         connection(String::from(server_names[x]), private_share);
     }
 

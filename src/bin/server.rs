@@ -158,12 +158,5 @@ fn main() -> std::io::Result<()> {
             }
         }
     }
-
-    // how to communicate between servers? 
-    // do we need to async anything? 
-    // how do we retrieve answers from the client/ where do we output them?
-    // I think we should have both servers print out result to cmd line 
-    // we calculate manual for now
-
     Ok(())
 }
