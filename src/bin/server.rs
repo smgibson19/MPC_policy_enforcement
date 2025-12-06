@@ -1,7 +1,58 @@
-use std::io::{Read, Write};
+//use std::io::{Read, Write};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::io::{Read, Shutdown};
 use std::net::{TcpListener, TcpStream, Shutdown};
 use std::sync::{Arc, Mutex};
 use std::thread;
+
+
+pub struct Policy {
+    pub threshold: usize,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ShareMessage {
+    pub share: usize,
+    pub policy_id: String,
+    pub policy: Option<Policy>,
+}
+
+#[derive(Debug)]
+pub struct PolicyState {
+    pub policy: Policy,
+    pub shares: Vec<usize>,
+    //pub shares: Vec<SecretShare>,
+}
+
+type SharedPolicies = Arc<Mutex<HashMap<String, PolicyState>>>;
+
+fn add_share(shared: &SharedPolicies, policy_id: String, policy_opt: Option<Policy>, share: usize) {
+    let mut map = shared.lock().unwrap();
+    if let Some(state) = map.get_mut(&policy_id) {
+        state.shares.push(share);
+    } else {
+        let policy = policy_opt.unwrap_or(Policy { threshold: 3 });
+        let state = PolicyState { policy, shares: vec![share] };
+        map.insert(policy_id, state);
+    }
+}
+
+fn policy_check_and_open(shared: &SharedPolicies, policy_id: &str) -> Option<usize> {
+    let mut map = shared.lock().unwrap();
+    if let Some(state) = map.get_mut(policy_id) {
+        if state.shares.len() >= state.policy.threshold {
+            let sum: usize = state.shares.iter().sum();
+            state.shares.clear();
+            return Some(sum);
+        }
+    }
+    None
+}
+
+pub struct SecretShare {
+    pub value: usize,      
+    pub policy_id: String,
 
 // sum a vector of shares
 
@@ -49,7 +100,7 @@ fn handle_client(mut stream: TcpStream, shared_shares: Arc<Mutex<Vec<usize>>>,
                         if *count >= 3 {
                             let sum = {
                                 let shares = shared_shares.lock().unwrap();
-                                add_numbers(&shares)
+                                add_numbers((*shares).clone())
                             };
                             println!("Sum of shares: {}", sum);
 
