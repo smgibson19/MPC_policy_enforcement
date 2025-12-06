@@ -1,69 +1,50 @@
-//use std::io::{Read, Write};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::io::{Read, Shutdown};
+use serde::{Serialize, Deserialize};
+use std::collections::HashSet;
+use std::io::{Read};
 use std::net::{TcpListener, TcpStream, Shutdown};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
 
-pub struct Policy {
-    pub threshold: usize,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ShareMessage {
-    pub share: usize,
-    pub policy_id: String,
-    pub policy: Option<Policy>,
-}
-
-#[derive(Debug)]
-pub struct PolicyState {
-    pub policy: Policy,
-    pub shares: Vec<usize>,
-    //pub shares: Vec<SecretShare>,
-}
-
-type SharedPolicies = Arc<Mutex<HashMap<String, PolicyState>>>;
-
-fn add_share(shared: &SharedPolicies, policy_id: String, policy_opt: Option<Policy>, share: usize) {
-    let mut map = shared.lock().unwrap();
-    if let Some(state) = map.get_mut(&policy_id) {
-        state.shares.push(share);
-    } else {
-        let policy = policy_opt.unwrap_or(Policy { threshold: 3 });
-        let state = PolicyState { policy, shares: vec![share] };
-        map.insert(policy_id, state);
-    }
-}
-
-fn policy_check_and_open(shared: &SharedPolicies, policy_id: &str) -> Option<usize> {
-    let mut map = shared.lock().unwrap();
-    if let Some(state) = map.get_mut(policy_id) {
-        if state.shares.len() >= state.policy.threshold {
-            let sum: usize = state.shares.iter().sum();
-            state.shares.clear();
-            return Some(sum);
-        }
-    }
-    None
-}
 
 pub struct SecretShare {
-    pub value: usize,      
-    pub policy_id: String,
+    pub share: i32,      
+    pub share_policy: String,
+}
+
+impl SecretShare {
+    pub fn add(self, other: SecretShare) -> SecretShare {
+        let new_value = self.share + other.share;
+        let new_policy = self.share_policy.intersection(&other.share_policy).cloned().collect();
+        // need to change this based on what we want the function to return. example below
+        // let new_policy = if self.share_policy == other.share_policy {
+        //     self.share_policy.clone()
+        // } else {
+        //     "none".to_string()
+        // };
+        SecretShare { share: new_value, share_policy: new_policy }
+    }
+}
+
+fn add_secret_shares(shares: Vec<SecretShare>) -> SecretShare {
+    let mut shares_sum = shares[0].clone();
+    for s in shares.into_iter().skip(1) {
+        shares_sum = shares_sum.add(s);
+    }
+    shares_sum
+}
+
 
 // sum a vector of shares
 
-fn add_numbers(shares: Vec<usize>) -> usize {
-    shares.iter().sum()
-}
+//fn add_numbers(shares: Vec<usize>) -> usize {
+//    shares.iter().sum()
+//}
 
 
 // handles a client connection
 
-fn handle_client(mut stream: TcpStream, shared_shares: Arc<Mutex<Vec<usize>>>,
+fn handle_client(mut stream: TcpStream, shared_shares: Arc<Mutex<Vec<SecretShare>>>,
     thread_count: Arc<Mutex<usize>>,) {
     let mut buffer = [0u8; 50]; 
     loop {
@@ -74,45 +55,68 @@ fn handle_client(mut stream: TcpStream, shared_shares: Arc<Mutex<Vec<usize>>>,
                 break;
             }
             Ok(n) => {
-                // echo the data that is read/received
-                //if let Err(e) = stream.write_all(&buffer[..n]) {
-                //    eprintln!("Failed to send data to {}: {}", stream.peer_addr().unwrap(), e);
-                //    break;
-                //}
                 let received = String::from_utf8_lossy(&buffer[..n]).trim().to_string();
-                match received.parse::<usize>() {
-                    Ok(share) => {
-                        {
-                            let mut shares = shared_shares.lock().unwrap();
-                            shares.push(share);
-                        }
+                //match received.parse::<usize>() {
+                //deserializing the received share and policy
+                let parsed: SecretShare = match serde_json::from_str(&received) {
+                    Ok(share) => share, 
+                    // {
+                    //     {
+                    //         let mut shares = shared_shares.lock().unwrap();
+                    //         shares.push(share);
+                    //     }
 
-                        // thread count increment
-                        let mut count = thread_count.lock().unwrap();
-                        *count += 1;
+                    //     // thread count increment
+                    //     let mut count = thread_count.lock().unwrap();
+                    //     *count += 1;
 
-                        println!(
-                            "Received share: {} | Thread count: {}",
-                            share, *count
-                        );
+                    //     println!(
+                    //         "Received share: {} | Thread count: {}",
+                    //         share, *count
+                    //     );
 
-                        // call add_numbers when thread count is 3
-                        if *count >= 3 {
-                            let sum = {
-                                let shares = shared_shares.lock().unwrap();
-                                add_numbers((*shares).clone())
-                            };
-                            println!("Sum of shares: {}", sum);
+                    //     // call add_numbers when thread count is 3
+                    //     if *count >= 3 {
+                    //         let sum = {
+                    //             let shares = shared_shares.lock().unwrap();
+                    //             add_numbers((*shares).clone())
+                    //         };
+                    //         println!("Sum of shares: {}", sum);
 
-                            // reset count for next input
-                            let mut shares = shared_shares.lock().unwrap();
-                            shares.clear();
-                            *count = 0;
-                        }
-                    }
+                    //         // reset count for next input
+                    //         let mut shares = shared_shares.lock().unwrap();
+                    //         shares.clear();
+                    //         *count = 0;
+                    //     }
+                    // }
                     Err(_) => {
                         println!("Invalid input from {}: {}", stream.peer_addr().unwrap(), received);
                     }
+                };
+
+                {
+                    let mut vec = shared_shares.lock().unwrap();
+                    vec.push(parsed.clone());
+                }
+
+                let mut count = thread_count.lock().unwrap();
+                *count += 1;
+
+                println!("Received share: {:?}", parsed);
+
+                if *count == 3 {
+                    let final_ans = {
+                        let vec = shared.lock().unwrap();
+                        add_secret_shares(vec.clone())
+                    };
+
+                    println!("Output:");
+                    println!("Sum = {}", final_ans.share);
+                    println!("Policy = {:?}", final_ans.share_policy);
+                    println!("\n");
+
+                    shared.lock().unwrap().clear();
+                    *c = 0;
                 }
             }
             Err(e) => {
@@ -132,9 +136,9 @@ fn main() -> std::io::Result<()> {
     println!("Server listening on port 3333");
 
     // shared vector to collect shares
-    let shared_shares = Arc::new(Mutex::new(Vec::new()));
+    let new_shares = Arc::new(Mutex::new(Vec::<SecretShare>::new()));
     // shared thread counter
-    let thread_count = Arc::new(Mutex::new(0));
+    let count = Arc::new(Mutex::new(0));
 
     // incoming connection
     for stream in listener.incoming() {
@@ -142,11 +146,11 @@ fn main() -> std::io::Result<()> {
             Ok(stream) => {
                 println!("New connection from {}", stream.peer_addr().unwrap());
 
-                let shares_clone = Arc::clone(&shared_shares);
-                let count_clone = Arc::clone(&thread_count);
+                let shared_shares = Arc::clone(&new_shares);
+                let thread_count = Arc::clone(&count);
                 // establish connection between clients?
                 thread::spawn(move || {
-                    handle_client(stream, shares_clone, count_clone);
+                    handle_client(stream, shared_shares, thread_count);
                 });
             }
             Err(e) => {
