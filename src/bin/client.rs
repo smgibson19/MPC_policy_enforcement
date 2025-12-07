@@ -1,5 +1,5 @@
 use rand::Rng;
-use std::io::{Read, Write};
+use std::io::{Write};
 use std::net::{TcpStream};
 use std::{env};
 use std::collections::HashSet;
@@ -84,7 +84,7 @@ fn connection(host_name: String, private_share: SecretShare){
 
 fn main() {
     // take in secret number from args
-    // assuming user inputs args as follows: num file.txt file2.txt file3.txt
+    // user inputs args as follows: num file.txt file2.txt file3.txt
     let args: Vec<String> = env::args().collect();
 
     let secret = &args[1]; 
@@ -108,7 +108,7 @@ fn main() {
 
     // need the server names in a list
     // let server_names: Vec<&str> = vec!["localhost:3333", "localhost:3334"];
-    let server_names: Vec<&str> = vec!["localhost:3333"];
+    let server_names: Vec<&str> = vec!["localhost:3333", "localhost:3334"];
 
 
     // sends one secret to each server
