@@ -45,7 +45,7 @@ use crate::client::SecretShare;
 
 fn handle_client(mut stream: TcpStream, shared_shares: Arc<Mutex<Vec<SecretShare>>>,
     thread_count: Arc<Mutex<usize>>,) {
-    let mut buffer = [0u8; 50]; 
+    let mut buffer = [0u8; 128]; 
     loop {
         match stream.read(&mut buffer) {
             Ok(0) => {
@@ -59,7 +59,6 @@ fn handle_client(mut stream: TcpStream, shared_shares: Arc<Mutex<Vec<SecretShare
             }
             Ok(_n) => {
                 let parsed: SecretShare = bincode::deserialize(&buffer).unwrap();
-                println!("hi :)");
 
                 // list of shares from all clients
                 let mut vec = shared_shares.lock().unwrap();
@@ -68,21 +67,10 @@ fn handle_client(mut stream: TcpStream, shared_shares: Arc<Mutex<Vec<SecretShare
                 let mut count = thread_count.lock().unwrap();
                 *count += 1;
 
-                // println!("Received share: {:?}", parsed);
-
                 if *count == 3 {
-                    // let final_ans = {
-                    // };
-
-                    // println!("Output:");
-                    // println!("Sum = {}", final_ans.share);
-                    // println!("Policy = {:?}", final_ans.share_policy);
-                    // println!("\n");
                     // let vec = shared_shares.lock().unwrap();
-                    // add_secret_shares(*vec);
-
-                    let vec = shared_shares.lock().unwrap();
                     // add_secret_shares(*vec)
+
                     let output = vec[0].clone().add(vec[1].clone()).add(vec[2].clone());
                     let name = String::from("server1.txt");
                     output.reveal(name);

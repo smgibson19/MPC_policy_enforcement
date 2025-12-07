@@ -18,7 +18,7 @@ impl SecretShare {
     }
     pub fn add(self, other: SecretShare) -> SecretShare {
         let new_share: i32 = self.share + other.share;
-
+        print!("adding");
         // add policy conservatively; intersection of two
         let new_policy: HashSet<String> = (self.share_policy).intersection(&other.share_policy).cloned().collect();
         SecretShare::new(new_share, new_policy)
@@ -68,24 +68,12 @@ fn share(data: i32, shares: i32) -> Vec<i32> {
 fn connection(host_name: String, private_share: SecretShare){
     match TcpStream::connect(&host_name) {
         Ok(mut stream) => {
-            println!("Successfully connected to server {}", host_name);
-
             // serialize it to send
             let serialized = bincode::serialize(&private_share).unwrap();
 
             // writing all share to stream 
             stream.write_all(&serialized).unwrap();
-            println!("Sent share, awaiting reply...");
-
-            let mut buffer = [0u8; 50]; 
-            match stream.read(&mut buffer) {
-                Ok(_) => {
-                    println!("Reply is ok!");
-                },
-                Err(e) => {
-                    println!("Failed to receive data: {}", e);
-                }
-            }
+            println!("Sent share, server will send you results.");
         },
         Err(e) => {
             println!("Failed to connect: {}", e);
@@ -98,7 +86,6 @@ fn main() {
     // take in secret number from args
     // assuming user inputs args as follows: num file.txt file2.txt file3.txt
     let args: Vec<String> = env::args().collect();
-    println!("{:?}", args);
 
     let secret = &args[1]; 
     let secret: i32 = secret.parse::<i32>().unwrap();
@@ -126,6 +113,7 @@ fn main() {
 
     // sends one secret to each server
     for x in 0..server_names.len() {
+        println!("{:?}", shares[x]);
         let private_share = SecretShare{share: shares[x], share_policy: (policies[x]).clone()};
 
         connection(String::from(server_names[x]), private_share);
