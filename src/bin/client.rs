@@ -113,7 +113,6 @@ fn main() {
 
     // sends one secret to each server
     for x in 0..server_names.len() {
-        println!("{:?}", shares[x]);
         let private_share = SecretShare{share: shares[x], share_policy: (policies[x]).clone()};
 
         connection(String::from(server_names[x]), private_share);
