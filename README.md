@@ -1,20 +1,9 @@
 ## Project Overview
 
-593 semester project: creating a distributed MPC system with data policy enforcement
-
-# How it works
-
-- Split any integer secret into `n` shares.
-- Each share (except the last) is a random integer, possibly positive or negative.
-- The sum of all shares equals the original secret (last share is calculated based on the previous randomly generated ones).
-- Reconstruct the original secret by summing the shares.
-
-# Secret Sharing in Rust
-
-The secret share function splits a secret integer into multiple "shares" so that the sum of all shares is a reconstructed version of the original secret. This is a basic illustration of how secret splitting works for secure multi-party computation (MPC).
-
+593 semester project: creating a distributed database system that uses MPC to securely sum data with data policy enforcement policy.
 
 ## Project Structure
+
 ```text
 src/
 │
@@ -33,17 +22,26 @@ src/
 
 | Script Name | Role | Description |
 | :--- | :--- | :--- |
-| **`client.rs`** | **client nodes** | The entry point. Calls all other scripts in the correct order (ETL → Logic → Analysis → Viz). |
-| **`server3333/3334.rs`** | **server in distributed system** | Ingests `01_raw` CSVs, cleans headers/dates, and builds the `usaspending.db`. |
+| **`client.rs`** | **client nodes** | intake num to share and policy, splits between servers |
+| **`server3333/3334.rs`** | **server in distributed system** | sums shares from clients, calls policy to send data who has permission |
 
-Both server files function the same, each has its own local host and txt file location hardcoded internally. 
+- Both server files function the same, each has its own local host and txt file location hardcoded internally. 
 
 ## How to Run Program
-
 
 ### System Requirements
 
   * updated version of Rust
-  * hello_cargo will handle other dependencies
+  * hello_cargo contains necessary rust dependencies
+  * recommend using a linux commandline
 
-### Step 2: Set Up Python Environment
+### Running the System
+
+command to run: cargo run --bin `filename` `list` `args`
+
+1) Open each server instance in a seperate commandline
+    -  make sure both servers are running before clients are called
+2) Open three instances of the client file
+    - input syntax for arguments is as follows: number file.txt file2.txt
+    - for what is implemented in this project, server1.txt and server2.txt are the files necessary for clients to give access to complete the sum
+    - additional clients can be added, number of clients can be modified by the `num_parties` variable
